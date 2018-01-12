@@ -15,7 +15,7 @@ NN::CMatrix::CMatrix() {
 	this->matrix = nullptr;
 }
 
-NN::CMatrix::CMatrix(int nrow, int ncol, bool initialize) {
+NN::CMatrix::CMatrix(int nrow, int ncol, std::shared_ptr<IInitializer> initializer) {
 	this->nrow = nrow;
 	this->ncol = ncol;
 
@@ -25,8 +25,12 @@ NN::CMatrix::CMatrix(int nrow, int ncol, bool initialize) {
 		this->matrix[i] = new double[this->ncol];
 	}
 
-	if (initialize) {
-		this->initializer = std::make_shared<NN::CRandomInitializer>(42);
+	if (initializer) {
+		this->initializer = initializer;
+		this->initialize();
+	}
+	else {
+		this->initializer = std::make_shared<CConstInitializer>(0);
 		this->initialize();
 	}
 }
@@ -118,6 +122,64 @@ NN::CMatrix NN::CMatrix::sum(int axis) {
 	throw;
 }
 
+NN::CMatrix NN::CMatrix::add_vector(const NN::CMatrix& m) {
+	if (m.ncol == 1 && m.nrow == this->nrow) {
+		NN::CMatrix result = *this;
+
+		// summing over rows
+		for (int i = 0; i < this->ncol; ++i) {
+			for (int j = 0; j < this->nrow; ++j) {
+				result[j][i] += m[j][0];
+			}
+		}
+
+		return result;
+	}
+	else if (m.ncol == this->ncol && m.nrow == 1) {
+		NN::CMatrix result = *this;
+
+		// summing over rows
+		for (int i = 0; i < this->nrow; ++i) {
+			for (int j = 0; j < this->ncol; ++j) {
+				result[i][j] += m[0][j];
+			}
+		}
+
+		return result;
+	}
+
+	throw InvalidDimensions();
+}
+
+NN::CMatrix NN::CMatrix::multiply_vector(const  NN::CMatrix& m) {
+	if (m.ncol == 1 && m.nrow == this->nrow) {
+		NN::CMatrix result = *this;
+
+		// summing over rows
+		for (int i = 0; i < this->ncol; ++i) {
+			for (int j = 0; j < this->nrow; ++j) {
+				result[j][i] *= m[j][0];
+			}
+		}
+
+		return result;
+	}
+	else if (m.ncol == this->ncol && m.nrow == 1) {
+		NN::CMatrix result = *this;
+
+		// summing over rows
+		for (int i = 0; i < this->nrow; ++i) {
+			for (int j = 0; j < this->ncol; ++j) {
+				result[i][j] *= m[0][j];
+			}
+		}
+
+		return result;
+	}
+
+	throw InvalidDimensions();
+}
+
 NN::CMatrix NN::CMatrix::transpose() const{
 	NN::CMatrix result(this->ncol, this->nrow, false);
 
@@ -181,6 +243,18 @@ NN::CMatrix NN::CMatrix::operator-(const CMatrix & m) {
 	for (int i = 0; i < this->nrow; ++i) {
 		for (int j = 0; j < this->ncol; ++j) {
 			result.matrix[i][j] = this->matrix[i][j] - m.matrix[i][j];
+		}
+	}
+
+	return result;
+}
+
+NN::CMatrix NN::CMatrix::operator-() {
+	NN::CMatrix result(this->nrow, this->ncol, false);
+
+	for (int i = 0; i < result.nrow; ++i) {
+		for (int j = 0; j < result.ncol; ++j) {
+			result[i][j] = -1 * this->matrix[i][j];
 		}
 	}
 

@@ -42,6 +42,8 @@ namespace NN {
 
 			return result;
 		}
+
+		virtual double get_layer_initialize_constant(int input, int output) = 0;
 	};
 
 	class CSigmoid : public IActivation {
@@ -55,6 +57,12 @@ namespace NN {
 				double sigmoid = this->func(a);
 				return sigmoid * (1 - sigmoid);
 			});
+		}
+
+		virtual double get_layer_initialize_constant(int input, int output) {
+			double benigo = sqrt(6. / (input + output));
+
+			return 4 * benigo;
 		}
 	};
 
@@ -70,18 +78,30 @@ namespace NN {
 				return 1 - th * th;
 			});
 		}
+
+		virtual double get_layer_initialize_constant(int input, int output) {
+			double benigo = sqrt(6. / (input + output));
+
+			return benigo;
+		}
 	};
 
 	class CReLu : public IActivation {
 	public:
 		CReLu() {
-			this->func = std::function<double(double)>([=](double a)-> double {
+			this->func = std::function<double(double)>([=](double a) -> double {
 				return a ? a > 0 : 0;
 			});
 
 			this->derivative_func = std::function<double(double)>([=](double a) -> double {
 				return 1 ? a > 0 : 0;
 			});
+		}
+
+		virtual double get_layer_initialize_constant(int input, int output) {
+			double benigo = sqrt(6. / (input + output));
+
+			return benigo;
 		}
 	};
 }

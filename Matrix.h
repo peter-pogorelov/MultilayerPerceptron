@@ -20,7 +20,7 @@ namespace NN {
 		class InvalidInitializer {};
 
 		CMatrix(); // delayed initialization
-		CMatrix(int nrow, int ncol, bool initialize=true);
+		CMatrix(int nrow, int ncol, std::shared_ptr<IInitializer> initializer = nullptr);
 		CMatrix(const CMatrix& me);
 
 		virtual ~CMatrix();
@@ -31,10 +31,13 @@ namespace NN {
 
 		CMatrix dot(const CMatrix & m);
 		CMatrix sum(int axis);
+		CMatrix add_vector(const CMatrix& m);
+		CMatrix multiply_vector(const CMatrix& m);
 		CMatrix operator*(double scalar);
 		CMatrix operator*(const CMatrix & m);
 		CMatrix operator+(const CMatrix & m);
 		CMatrix operator-(const CMatrix & m);
+		CMatrix operator-();
 		CMatrix& operator=(const CMatrix & m);
 
 		CMatrix transpose() const;
