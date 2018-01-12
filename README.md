@@ -1,6 +1,7 @@
 # MultilayerPerceptron
 Multilayer perceptron C++ implementation without external dependencies (except STL)
 
+####----------------------------------------------------------------------
 ### test data from Andrew Ng course (flower dataset):
 ### neural network: 4x1
 ### activations: tanh x sigmoid
@@ -12,6 +13,7 @@ Multilayer perceptron C++ implementation without external dependencies (except S
 #### iteration: 4900, cost: 46.872858'
 #### accuracy: 0.920000
 
+####----------------------------------------------------------------------
 ### breast cancer sklearn dataset
 ### neural network: 10x5x2x1 neurons
 ### activations: tanh x relu x tanh x sigmoid
