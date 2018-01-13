@@ -1,23 +1,46 @@
 #include "Perceptron.h"
 
 namespace NN {
-	CPerceptron::CPerceptron(int input_size, int vars, int classes, const std::vector<int>& hidden_layers, const std::vector<ActivationFunction>& activators) {
+	CPerceptron::CPerceptron(
+		int input_size,
+		int vars,
+		int classes,
+		std::vector<std::tuple<layer_size, ActivationFunction, LayerTypes>>& layer_params
+	) {
+
 		int prev_layer = vars;
 
-		for (size_t i = 0; i < hidden_layers.size(); ++i) {
-			this->layers.push_back(
-				//std::make_shared<CLayer>(prev_layer, hidden_layers[i], input_size, activators[i])
-				std::make_shared<CRidgeLayer>(prev_layer, hidden_layers[i], input_size, activators[i], 1)
-				//std::make_shared<CDropoutLayer>(prev_layer, hidden_layers[i], input_size, activators[i], 0.1)
-			);
-			prev_layer = hidden_layers[i];
+		for (auto& param : layer_params) {
+			layer_size l_size = std::get<0>(param);
+			ActivationFunction l_activation = std::get<1>(param);
+			LayerTypes l_type = std::get<2>(param);
+
+			switch (l_type) {
+			case LayerTypes::E_PLAIN:
+				this->layers.push_back(std::make_shared<CLayer>(prev_layer, l_size, input_size, l_activation));
+				break;
+			case LayerTypes::E_RIDGE:
+				// at the moment the penalty of ridge layer is fixed to one
+				this->layers.push_back(std::make_shared<CRidgeLayer>(prev_layer, l_size, input_size, l_activation, 1));
+				break;
+			case LayerTypes::E_DROPOUT:
+				// at the moment the probability of neuron being dropped off the network is fixed to 0.5
+				this->layers.push_back(std::make_shared<CDropoutLayer>(prev_layer, l_size, input_size, l_activation, 0.5));
+				break;
+			}
+
+			prev_layer = l_size;
 		}
 
 		int output_neurons = classes == 2 ? 1 : classes;
 
+		// add final layer (with different backprop implementation)
 		this->layers.push_back(
 			std::make_shared<CCrossEntropyLayer>(prev_layer, output_neurons, input_size, ActivationFunction::E_SIGMOID)
 		);
+
+		// use full batch training by default
+		this->train_method = std::make_shared<CFullBatch>(42);
 	}
 
 	void CPerceptron::set_lr(double lr) {
@@ -28,15 +51,23 @@ namespace NN {
 		this->lr_decay = state;
 	}
 
+	void CPerceptron::set_train_method(std::shared_ptr<CTrainMethod> train_method) {
+		this->train_method = train_method;
+	}
+
 	void CPerceptron::fit(const CMatrix &X, const CMatrix &y, int max_iter) {
-		// traind model
+		// train model
 		double current_lr = this->lr; // make a copy in case of lr decay usage
-		
+		this->train_method->set_x(X);
+		this->train_method->set_y(y);
+
+		// split for the mini batches
 		for (int i = 0; i < max_iter; ++i) {
-			auto& predicted = this->forwardprop(X, i);
-			this->update_grads();
-			this->backwardprop(X, y);
-			double cost = this->cost(y, predicted);
+			this->train_method->epoch([=](const CMatrix &_x, const CMatrix &_y) {
+				this->forwardprop(_x, i);
+				this->update_grads();
+				this->backwardprop(_x, _y);
+			});
 
 			if (this->lr_decay) {
 				this->lr = std::pow(current_lr, i);
@@ -44,8 +75,11 @@ namespace NN {
 
 			if (i % 100 == 0) {
 				char outp[100];
-				sprintf_s(outp, "epoch: %d, cost: %lf, lr: %lf \n", i, cost, this->lr);
-				DBOUT(outp);
+				auto& predicted = this->forwardprop(X);
+				double cost = this->cost(y, predicted);
+
+				sprintf_s(outp, "epoch: %d, cost: %lf, lr: %lf", i, cost, this->lr);
+				std::cout << outp << std::endl;
 			}
 		}
 	}
@@ -67,7 +101,10 @@ namespace NN {
 		auto prev_output = x;
 
 		for (auto& layer : this->layers) {
-			layer->forward(prev_output, epoch + time(nullptr) + clock());
+			if(epoch != -1)
+				layer->forward(prev_output, epoch + (int)time(nullptr) + clock());
+			else
+				layer->forward(prev_output, -1);
 			
 			prev_output = layer->A;
 		}

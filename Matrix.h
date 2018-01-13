@@ -4,6 +4,7 @@
 #include <memory>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include "MatrixInitializer.h"
 
@@ -41,6 +42,11 @@ namespace NN {
 		CMatrix& operator=(const CMatrix & m);
 
 		CMatrix transpose() const;
+		CMatrix shuffle(int seed = 42) const;
+		CMatrix vertical_slice(int from, int to) const;
+		CMatrix horizontal_slize(int from, int to) const;
+
+		double** get();
 
 		std::string to_string();
 	private:

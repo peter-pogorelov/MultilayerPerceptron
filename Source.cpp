@@ -1,10 +1,8 @@
 #include <iostream>
-#include <memory>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
+#include <vector>
+#include <tuple>
 
-
+/*
 #include <Windows.h>
 #define DBOUT( s )            \
 {                             \
@@ -12,11 +10,13 @@
    os_ << s;                   \
    OutputDebugStringA( os_.str().c_str() );  \
 }
+*/
 
 #include "Matrix.h"
 #include "Perceptron.h"
 #include "Activation.h"
 #include "Data.h"
+#include "MiniBatch.h"
 
 double accuracy(const NN::CMatrix& y_pred, const NN::CMatrix& y_real) {
 	int correct = 0;
@@ -34,27 +34,37 @@ int main() {
 		auto& X = flowerX_to_matrix();
 		auto& Y = flowerY_to_matrix();
 
-
 		NN::CPerceptron nn(
 			X.ncol, // observations 
 			X.nrow,  // variables
 			2,   // classes
-			{ 10, 5, 2 }, // neurons in each layer
-			{ NN::ActivationFunction::E_TANH, NN::ActivationFunction::E_RELU, NN::ActivationFunction::E_TANH } // activation functions for each neuron
-		);
+			// omg it appears to be really ugly, but easy to copy / paste to make additional layers
+			std::vector<std::tuple<NN::layer_size, NN::ActivationFunction, NN::LayerTypes>> {
 
+				std::tuple<NN::layer_size, NN::ActivationFunction, NN::LayerTypes>\
+				(4, NN::ActivationFunction::E_TANH, NN::LayerTypes::E_PLAIN),
+
+			}
+		);
+		
 		nn.set_lr(0.999);
 		nn.set_lr_decay_state(true);
+		nn.set_train_method(std::make_shared<NN::CMiniBatch>(128, 42));
 
-		nn.fit(X, Y, 5000);
+		nn.fit(X, Y, 1000);
+
 		auto& prediction = nn.predict(X);
 		auto acc_value = accuracy(prediction, Y);
 
-		char outp[100];
-		sprintf_s(outp, "accuracy: %lf", acc_value);
-		DBOUT(outp);
+		std::cout << "accuracy:" << acc_value << std::endl;
+		std::cout << "please press any key." << std::endl;
+		std::getchar();
+		std::getchar();
 	}
 	catch (NN::CMatrix::InvalidDimensions) {
-		DBOUT("INVALID DIMENSIONS\n");
+		std::cout << "invalid dimensions" << std::endl;
+	}
+	catch (...) {
+		std::cout << "something went wrong." << std::endl;
 	}
 }

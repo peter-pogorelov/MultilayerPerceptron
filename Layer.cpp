@@ -62,6 +62,10 @@ namespace NN {
 	}
 
 	void CDropoutLayer::forward(CMatrix &input, int iteration) {
+		if (iteration == -1) {
+			this->CLayer::forward(input, iteration); // do not drop units if iteration = -1
+			return;
+		}
 		auto& dropout_neurons = this->generate_dropout(iteration, this->A.nrow);
 
 		this->Z = this->W.dot(input);

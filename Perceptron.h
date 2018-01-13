@@ -1,22 +1,20 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <tuple>
 
 #include "Activation.h"
+#include "MiniBatch.h"
 #include "Layer.h"
 
-#include <Windows.h>
-#define DBOUT( s )            \
-{                             \
-   std::ostringstream os_;    \
-   os_ << s;                   \
-   OutputDebugStringA( os_.str().c_str() );  \
-}
-
 namespace NN {
+	using layer_size = unsigned int;
+
+
 	class CPerceptron {
 	private:
 		std::vector<std::shared_ptr<CLayer>> layers;
+		std::shared_ptr<CTrainMethod> train_method;
 
 		double lr = 0.35;
 		bool lr_decay = false;
@@ -24,15 +22,15 @@ namespace NN {
 		class UnconvergentException {};
 
 		CPerceptron(
-			int input_size, 
+			int input_size,
 			int vars,
 			int classes,
-			const std::vector<int>& hidden_layers, 
-			const std::vector<ActivationFunction>& activators
+			std::vector<std::tuple<layer_size, ActivationFunction, LayerTypes>>& layer_params
 		);
 
 		void set_lr(double lr);
 		void set_lr_decay_state(bool lr_decay);
+		void set_train_method(std::shared_ptr<CTrainMethod> train_method);
 
 		void fit(const CMatrix &X, const CMatrix &y, int max_iter = 5000);
 

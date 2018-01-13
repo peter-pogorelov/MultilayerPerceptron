@@ -192,6 +192,48 @@ NN::CMatrix NN::CMatrix::transpose() const{
 	return result;
 }
 
+NN::CMatrix NN::CMatrix::shuffle(int seed) const {
+	CMatrix shuffled = this->transpose();
+
+	std::default_random_engine generator;
+	// make sure that batches are the same within the each epoch
+	generator.seed(seed);
+
+	std::shuffle(
+		shuffled.get(),
+		shuffled.get() + shuffled.nrow,
+		generator
+	);
+
+	return shuffled.transpose();
+}
+
+NN::CMatrix NN::CMatrix::vertical_slice(int from, int to) const
+{
+	CMatrix matr(this->nrow, to-from+1);
+
+	for (int i = 0; i < this->nrow; ++i) {
+		for (int j_1 = from, j_2 = 0; j_1 <= to; ++j_1, ++j_2) {
+			matr[i][j_2] = this->matrix[i][j_1];
+		}
+	}
+
+	return matr;
+}
+
+NN::CMatrix NN::CMatrix::horizontal_slize(int from, int to) const
+{
+	CMatrix matr(to - from + 1, this->ncol);
+
+	for (int i_1 = from, i_2 = 0; i_1 < to; ++i_1, ++i_2) {
+		for (int j = 0; j < this->ncol; ++j) {
+			matr[i_2][j] = this->matrix[i_1][j];
+		}
+	}
+
+	return matr;
+}
+
 NN::CMatrix NN::CMatrix::operator*(double scalar) {
 	NN::CMatrix result(this->nrow, this->ncol, false);
 
@@ -295,6 +337,10 @@ void NN::CMatrix::deep_copy_object(const NN::CMatrix &m) {
 			this->matrix[i][j] = m.matrix[i][j];
 		}
 	}
+}
+
+double** NN::CMatrix::get() {
+	return this->matrix;
 }
 
 void NN::CMatrix::copy_object(const NN::CMatrix &m) {

@@ -4,6 +4,13 @@
 #include "Random.h"
 
 namespace NN {
+	enum class LayerTypes {
+		E_PLAIN,
+		E_RIDGE,
+		E_DROPOUT
+	};
+
+
 	class CAbstractLayer {
 	public:
 		std::shared_ptr<IInitializer> initializer;
@@ -30,8 +37,8 @@ namespace NN {
 				seed, activation_func->get_layer_initialize_constant(neurons_prev, neurons)
 			);
 
-			this->W = CMatrix(neurons, neurons_prev, false);
-			this->dW = CMatrix(neurons, neurons_prev, initializer);
+			this->W = CMatrix(neurons, neurons_prev, initializer);
+			this->dW = CMatrix(neurons, neurons_prev, nullptr);
 
 			this->B = CMatrix(neurons, 1, false);
 			this->dB = CMatrix(neurons, 1, nullptr);
